@@ -10,10 +10,10 @@ class NequiTest extends TestCase
 {
     public function testValidateAccount()
     {
-        $apikey = "";
-        $secretKey = "";
-        $access_key = "";
-        $clientId = "12345";
+        $apikey = getenv("API_KEY");
+        $secretKey = getenv("SECRET_KEY");
+        $access_key = getenv("ACCESS_KEY");
+        $clientId = getenv("CLIENT_ID");
 
         $nequi = new Client($apikey, $secretKey, $access_key, $clientId);
 

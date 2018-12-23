@@ -8,6 +8,16 @@ class Client
 
     const URL_RELATIVE_VALIDATE_CLIENT = "/qa/-services-clientservice-validateclient";
 
+    const URL_RELATIVE_CASHIN_SERVICE = '/qa/-services-cashinservice-cashin';
+
+    const URL_RELATIVE_CASHOUT_CONSULT = "/qa/-services-cashoutservice-cashoutconsult";
+
+    const URL_RELATIVE_KEY_SERVICE_PUBLIC =  "/qa/-services-keysservice-getpublic";
+
+    const URL_RELATIVE_CASHOUT_SERVICE = "/qa/-services-cashoutservice-cashout";
+
+    const URL_RELATIVE_REVERSE_TRANSACTION = "/qa/-services-reverseservices-reversetransaction";
+
     const REGION_AWS = "us-east-1";
 
     const CHANNEL = "MF-001";
@@ -57,35 +67,165 @@ class Client
     public function validateClient($phoneNumber, $value)
     {
 
-        $body = $this->getBodyValidateClient( $phoneNumber, $value);
+        $contentBody = array(
+            "any" => array (
+                "validateClientRQ" => array (
+                    "phoneNumber" => $phoneNumber,
+                    "value" => $value
+                )
+            )
+        );
+
+        $body = $this->constructorBody($contentBody);
         $authorization_header = $this->signed($body, self::URL_RELATIVE_VALIDATE_CLIENT);
         $data = $this->request($body, $authorization_header, self::URL_RELATIVE_VALIDATE_CLIENT);
         return $data;
     }
 
-    /**
-     * @param $phoneNumber
-     * @param $value
-     * @return false|string
-     */
-    public function getBodyValidateClient($phoneNumber, $value)
+    public function cashService($phoneNumber, $value)
     {
-        $body = array(
-            "RequestMessage"  => array(
-                "RequestHeader"  => array (
-                    "Channel" => self::CHANNEL,
-                    "RequestDate" => gmdate("Y-m-d\TH:i:s\\Z"),
-                    "MessageID" => time(),
-                    "ClientID" => $this->clientId),
-                "RequestBody"  => array (
-                    "any" => array (
-                        "validateClientRQ" => array (
-                            "phoneNumber" => $phoneNumber,
-                            "value" => $value
-                        )
-                    )
+        $contentBody = array(
+            "any" => array (
+                "cashInRQ" => array (
+                    "phoneNumber" => $phoneNumber,
+                    "code" => "1",
+                    "value" => $value
                 )
             )
+        );
+
+        $destination = array(
+            "Destination" => array(
+                "ServiceName" => "CashInService",
+                "ServiceOperation" => "cashIn",
+                "ServiceRegion" => "C001",
+                "ServiceVersion" => "1.0.0"
+            )
+        );
+
+        $body = $this->constructorBody($contentBody,$destination);
+        $authorization_header = $this->signed($body, self::URL_RELATIVE_CASHIN_SERVICE);
+        $data = $this->request($body, $authorization_header, self::URL_RELATIVE_CASHIN_SERVICE);
+        return $data;
+    }
+
+    public function cashoutConsult($phoneNumber)
+    {
+        $contentBody = array(
+            "any" => array (
+                "cashOutConsultRQ" => array (
+                    "phoneNumber" => $phoneNumber
+                )
+            )
+        );
+
+        $destination = array(
+            "Destination" => array(
+                "ServiceName" => "CashOutServices",
+                "ServiceOperation" => "cashOutConsult",
+                "ServiceRegion" => "C001",
+                "ServiceVersion" => "1.0.0"
+            )
+        );
+
+        $body = $this->constructorBody($contentBody,$destination);
+        $authorization_header = $this->signed($body, self::URL_RELATIVE_CASHOUT_CONSULT);
+        $data = $this->request($body, $authorization_header, self::URL_RELATIVE_CASHOUT_CONSULT);
+        return $data;
+    }
+
+    public function getKeyPublic()
+    {
+        $authorization_header = $this->signed('{}', self::URL_RELATIVE_KEY_SERVICE_PUBLIC);
+        $data = $this->request('{}', $authorization_header, self::URL_RELATIVE_KEY_SERVICE_PUBLIC);
+        return $data;
+    }
+
+    public function cashoutService($phoneNumber, $value)
+    {
+        $contentBody = array(
+            "any" => array (
+                "cashOutRQ" => array (
+                    "phoneNumber" => $phoneNumber,
+                    "token" => "",
+                    "code" => "1",
+                    "reference" => " ",
+                    "value" => $value
+                )
+            )
+        );
+
+        $destination = array(
+            "Destination" => array(
+                "ServiceName" => "CashOutServices",
+                "ServiceOperation" => "cashOut",
+                "ServiceRegion" => "C001",
+                "ServiceVersion" => "1.0.0"
+            )
+        );
+
+        $body = $this->constructorBody($contentBody,$destination);
+        $authorization_header = $this->signed($body, self::URL_RELATIVE_CASHOUT_SERVICE);
+        $data = $this->request($body, $authorization_header, self::URL_RELATIVE_CASHOUT_SERVICE);
+        return $data;
+
+    }
+
+    public function reverseTransaction($phoneNumber, $value, $messageId, $type)
+    {
+        //Detertime type transaction cashin or cashout
+
+        $contentBody = array(
+            "any" => array (
+                "reversionRQ" => array (
+                    "phoneNumber" => $phoneNumber,
+                    "value" => $value,
+                    "code" => "1",
+                    "messageId" => $messageId,
+                    "type" => $type
+                )
+            )
+        );
+
+        $destination = array(
+            "Destination" => array(
+                "ServiceName" => "ReverseServices",
+                "ServiceOperation" => "reverseTransaction",
+                "ServiceRegion" => "C001",
+                "ServiceVersion" => "1.0.0"
+            )
+        );
+
+        $body = $this->constructorBody($contentBody,$destination);
+        $authorization_header = $this->signed($body, self::URL_RELATIVE_REVERSE_TRANSACTION);
+        $data = $this->request($body, $authorization_header, self::URL_RELATIVE_REVERSE_TRANSACTION);
+        return $data;
+    }
+
+    public function constructorBody($requestBody, $destination = array())
+    {
+        $headermain =  array(
+            "Channel" => self::CHANNEL,
+            "RequestDate" => gmdate("Y-m-d\TH:i:s\\Z"),
+            "MessageID" => time(),
+            "ClientID" => $this->clientId
+        );
+
+        $header = array(
+            "RequestHeader"  =>
+                empty($destination) ? $headermain : array_merge($headermain, $destination)
+
+        );
+
+        $bodyRequest = array(
+            "RequestBody"  =>
+                $requestBody
+
+        );
+
+        $body = array(
+            "RequestMessage"  =>
+                array_merge($header, $bodyRequest)
         );
 
         $params = json_encode($body);
