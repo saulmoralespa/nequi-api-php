@@ -16,7 +16,7 @@ composer require saulmoralespa/nequi-api-php
 include_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 
 //or load  path
-require_once ("/path/to/nequi-api-php/src/autoload.php");
+//require_once ("/path/to/nequi-api-php/src/autoload.php");
 
 // import client class
 use Nequi\Client;
