@@ -52,6 +52,8 @@ class Client
      */
     public $urlRelative;
 
+    public $sandbox;
+
     /**
      * Client constructor.
      * @param $apiKey
@@ -67,6 +69,19 @@ class Client
         $this->accessKey = $accessKey;
         $this->clientId = $clientId;
     }
+
+    /**
+     * @param bool $status
+     * @return $this
+     */
+    public function sandbox_mode($status = false)
+    {
+        if($status){
+            $this->sandbox = true;
+        }
+        return $this;
+    }
+
 
     /**
      * @param $phoneNumber
@@ -452,6 +467,7 @@ class Client
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $this->sandbox ? false : true);
 
         $headers = array();
         $headers[] = "Content-Type: application/json";

@@ -30,6 +30,7 @@ $clientId = getenv("CLIENT_ID");
 
 // instantiate the Nequi client
 $nequi = new Client($apikey, $secretKey, $access_key, $clientId);
+$nequi->sandbox_mode(true); //true for tests or false for production
 ```
 
 ### Validate account
