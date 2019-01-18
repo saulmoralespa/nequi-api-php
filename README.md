@@ -15,6 +15,9 @@ composer require saulmoralespa/nequi-api-php
 // ... please, add composer autoloader first
 include_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 
+//or load  path
+require_once ("/path/to/nequi-api-php/src/autoload.php");
+
 // import client class
 use Nequi\Client;
 
@@ -33,8 +36,14 @@ $nequi = new Client($apikey, $secretKey, $access_key, $clientId);
 
 ```php
 $phoneNumber="3195414070";
-$value="0";
-$data = $nequi->validateClient($phoneNumber, $value);
+$value="0"; //optional
+
+try{
+    $data = $nequi->validateClient('3195414070');
+}
+catch (\Nequi\Exception $exception){
+    echo $exception->getMessage();
+}
 ```
 
 ### Cash service cashin
@@ -42,20 +51,38 @@ $data = $nequi->validateClient($phoneNumber, $value);
 ```php
 $phoneNumber="3195414070";
 $value="2000";
-$data = $nequi->cashService($phoneNumber, $value);
+
+try{
+    $data = $nequi->cashService($phoneNumber, $value);
+}
+catch (\Nequi\Exception $exception){
+echo $exception->getMessage();
+}
 ```
 
 ### Cashout consult
 
 ```php
 $phoneNumber="3195414070";
-$data = $nequi->cashoutConsult($phoneNumber);
+
+try{
+    $data = $nequi->cashoutConsult($phoneNumber);
+}
+catch (\Nequi\Exception $exception){
+echo $exception->getMessage();
+}
 ```
 
 ### Get public key
 
 ```php
-$data = $nequi->getKeyPublic();
+
+try{
+    $data = $nequi->getKeyPublic();
+}
+catch (\Nequi\Exception $exception){
+echo $exception->getMessage();
+}
 ```
 
 ### Cash service cashout
@@ -63,7 +90,13 @@ $data = $nequi->getKeyPublic();
 ```php
 $phoneNumber="3195414070";
 $value="2000";
-$data = $nequi->cashoutService($phoneNumber, $value);
+
+try{
+    $data = $nequi->cashoutService($phoneNumber, $value);
+}
+catch (\Nequi\Exception $exception){
+echo $exception->getMessage();
+}
 ```
 
 ### Reverse transaction
@@ -73,7 +106,13 @@ $phoneNumber="3195414070";
 $value="2000";
 $messageId="1234567890";
 $type="cashin"; //cashin or cashout
-$data = $nequi->reverseTransaction($phoneNumber, $value, $messageId, $type);
+
+try{
+    $data = $nequi->reverseTransaction($phoneNumber, $value, $messageId, $type);
+}
+catch (\Nequi\Exception $exception){
+echo $exception->getMessage();
+}
 ```
 
 ### Reverse transaction
@@ -83,5 +122,11 @@ $phoneNumber="3195414070";
 $value="2000";
 $messageId="1234567890";
 $type="cashin"; //cashin or cashout
-$data = $nequi->reverseTransaction($phoneNumber, $value, $messageId, $type);
+
+try{
+    $data = $nequi->reverseTransaction($phoneNumber, $value, $messageId, $type);
+}
+catch (\Nequi\Exception $exception){
+echo $exception->getMessage();
+}
 ```

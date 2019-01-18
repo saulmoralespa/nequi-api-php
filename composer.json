@@ -21,16 +21,12 @@
         "ext-json": "*"
     },
     "require-dev": {
+        "vlucas/phpdotenv": "~2.0",
 		"phpunit/phpunit": "6.*"
     },
     "autoload": {
         "psr-4": {
-            "Nequi\\": "src/"
+            "Nequi\\": "src/Nequi/"
         }
-    },
-    "scripts": {
-        "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
-        ]
     }
 }

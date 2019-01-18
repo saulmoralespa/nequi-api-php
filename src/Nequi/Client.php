@@ -42,6 +42,15 @@ class Client
      */
     private $clientId;
 
+    /**
+     * @var
+     */
+    protected $_authorizationHeader;
+
+    /**
+     * @var
+     */
+    public $urlRelative;
 
     /**
      * Client constructor.
@@ -63,8 +72,9 @@ class Client
      * @param $phoneNumber
      * @param $value
      * @return mixed
+     * @throws Exception
      */
-    public function validateClient($phoneNumber, $value)
+    public function validateClient($phoneNumber, $value = '0')
     {
 
         $contentBody = array(
@@ -77,11 +87,19 @@ class Client
         );
 
         $body = $this->constructorBody($contentBody);
-        $authorization_header = $this->signed($body, self::URL_RELATIVE_VALIDATE_CLIENT);
-        $data = $this->request($body, $authorization_header, self::URL_RELATIVE_VALIDATE_CLIENT);
+        $this->setUrlRelative(self::URL_RELATIVE_VALIDATE_CLIENT);
+        $authorization_header = $this->signed($body);
+        $this->setAuthorizationHeader($authorization_header);
+        $data = $this->_exec($body);
         return $data;
     }
 
+    /**
+     * @param $phoneNumber
+     * @param $value
+     * @return mixed
+     * @throws Exception
+     */
     public function cashService($phoneNumber, $value)
     {
         $contentBody = array(
@@ -104,11 +122,18 @@ class Client
         );
 
         $body = $this->constructorBody($contentBody,$destination);
-        $authorization_header = $this->signed($body, self::URL_RELATIVE_CASHIN_SERVICE);
-        $data = $this->request($body, $authorization_header, self::URL_RELATIVE_CASHIN_SERVICE);
+        $this->setUrlRelative(self::URL_RELATIVE_CASHIN_SERVICE);
+        $authorization_header = $this->signed($body);
+        $this->setAuthorizationHeader($authorization_header);
+        $data = $this->_exec($body);
         return $data;
     }
 
+    /**
+     * @param $phoneNumber
+     * @return mixed
+     * @throws Exception
+     */
     public function cashoutConsult($phoneNumber)
     {
         $contentBody = array(
@@ -129,18 +154,33 @@ class Client
         );
 
         $body = $this->constructorBody($contentBody,$destination);
-        $authorization_header = $this->signed($body, self::URL_RELATIVE_CASHOUT_CONSULT);
-        $data = $this->request($body, $authorization_header, self::URL_RELATIVE_CASHOUT_CONSULT);
+        $this->setUrlRelative(self::URL_RELATIVE_CASHOUT_CONSULT);
+        $authorization_header = $this->signed($body);
+        $this->setAuthorizationHeader($authorization_header);
+        $data = $this->_exec($body);
         return $data;
     }
 
+    /**
+     * @return mixed
+     * @throws Exception
+     */
     public function getKeyPublic()
     {
-        $authorization_header = $this->signed('{}', self::URL_RELATIVE_KEY_SERVICE_PUBLIC);
-        $data = $this->request('{}', $authorization_header, self::URL_RELATIVE_KEY_SERVICE_PUBLIC);
+        $this->setUrlRelative(self::URL_RELATIVE_KEY_SERVICE_PUBLIC);
+        $authorization_header = $this->signed('{}');
+        $this->setAuthorizationHeader($authorization_header);
+        $body = "{}";
+        $data = $this->_exec($body);
         return $data;
     }
 
+    /**
+     * @param $phoneNumber
+     * @param $value
+     * @return mixed
+     * @throws Exception
+     */
     public function cashoutService($phoneNumber, $value)
     {
         $contentBody = array(
@@ -165,12 +205,22 @@ class Client
         );
 
         $body = $this->constructorBody($contentBody,$destination);
-        $authorization_header = $this->signed($body, self::URL_RELATIVE_CASHOUT_SERVICE);
-        $data = $this->request($body, $authorization_header, self::URL_RELATIVE_CASHOUT_SERVICE);
+        $this->setUrlRelative(self::URL_RELATIVE_CASHOUT_SERVICE);
+        $authorization_header = $this->signed($body);
+        $this->setAuthorizationHeader($authorization_header);
+        $data = $this->_exec($body);
         return $data;
 
     }
 
+    /**
+     * @param $phoneNumber
+     * @param $value
+     * @param $messageId
+     * @param $type
+     * @return mixed
+     * @throws Exception
+     */
     public function reverseTransaction($phoneNumber, $value, $messageId, $type)
     {
         //Detertime type transaction cashin or cashout
@@ -197,8 +247,10 @@ class Client
         );
 
         $body = $this->constructorBody($contentBody,$destination);
-        $authorization_header = $this->signed($body, self::URL_RELATIVE_REVERSE_TRANSACTION);
-        $data = $this->request($body, $authorization_header, self::URL_RELATIVE_REVERSE_TRANSACTION);
+        $this->setUrlRelative(self::URL_RELATIVE_REVERSE_TRANSACTION);
+        $authorization_header = $this->signed($body);
+        $this->setAuthorizationHeader($authorization_header);
+        $data = $this->_exec($body);
         return $data;
     }
 
@@ -235,12 +287,28 @@ class Client
     }
 
     /**
+     * @param $url
+     * @return $this
+     */
+    public function setUrlRelative($url)
+    {
+        $this->urlRelative = $url;
+        return $this;
+    }
+
+    private  function setAuthorizationHeader($header)
+    {
+        $this->_authorizationHeader = $header;
+        return $this;
+    }
+
+    /**
      * @param $body
      * @param $url_relative
      * @param string $method
      * @return string
      */
-    public function signed($body, $url_relative, $method='POST')
+    public function signed($body, $method='POST')
     {
 
         $service = 'execute-api';
@@ -268,7 +336,7 @@ class Client
 
         $canonical_request = array(
             $method,
-            $url_relative,
+            $this->urlRelative,
             "",
             $canonical_headers,
             $signed_headers,
@@ -332,17 +400,55 @@ class Client
     }
 
     /**
+     * @param $request
+     * @throws Exception
+     */
+    private function _exec($request)
+    {
+        $connect = $this->_buildRequest($request);
+
+        $api_result = curl_exec($connect);
+
+        $api_http_code = curl_getinfo($connect, CURLINFO_HTTP_CODE);
+
+
+        if ($api_result === false) {
+            throw new  Exception(curl_error($connect));
+        }
+
+        $response = json_decode($api_result);
+
+        if ($api_http_code !== 200){
+            if (isset($response->message)){
+                throw new  Exception($response->message, $api_http_code);
+            }
+        }
+
+        if (isset($response->ResponseMessage->ResponseHeader->Status->StatusCode)){
+            $status = $response->ResponseMessage->ResponseHeader->Status;
+            $statusCode = $status->StatusCode;
+            if (in_array($statusCode, $this->getCodesErrors())){
+                throw new  Exception($status->StatusDesc);
+            }
+        }
+
+        curl_close($connect);
+
+        return $response;
+    }
+
+    /**
      * @param $body
      * @param $authorization_header
      * @param $url_relative
      * @param string $method
      * @return mixed
      */
-    public function request($body, $authorization_header, $url_relative, $method='POST')
+    private function _buildRequest($body, $method='POST')
     {
         $ch = curl_init();
 
-        curl_setopt($ch, CURLOPT_URL, "https://".self::HOST.$url_relative);
+        curl_setopt($ch, CURLOPT_URL, "https://".self::HOST.$this->urlRelative);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
@@ -352,19 +458,30 @@ class Client
         $headers[] = "Accept: application/json";
         $headers[] = "X-Api-Key: $this->apiKey";
         $headers[] = "X-Amz-Date: " . gmdate( 'Ymd\THis\Z' );
-        $headers[] = "Authorization: $authorization_header";
+        $headers[] = "Authorization: $this->_authorizationHeader";
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-        $result = curl_exec($ch);
-        if (curl_errno($ch)) {
-            echo 'Error:' . curl_error($ch);
-        }
-        curl_close ($ch);
+        return $ch;
+    }
 
-        $data = json_decode($result);
-
-        return $data;
-
+    public function getCodesErrors()
+    {
+        return array(
+            '2-CCSB000012',
+            '2-CCSB000013',
+            '2-CCSB000079',
+            '3-451',
+            '3-455',
+            '10-454',
+            '10-455',
+            '11-9L',
+            '11-17L',
+            '11-18L',
+            '11-37L',
+            '20-05A',
+            '20-07A',
+            '20-08A'
+        );
     }
 
 }
