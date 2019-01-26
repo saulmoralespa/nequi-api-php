@@ -82,7 +82,6 @@ class Client
         return $this;
     }
 
-
     /**
      * @param $phoneNumber
      * @param $value
